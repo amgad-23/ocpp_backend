@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EVSE Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1, h2 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        th { background: #eee; }
+        .status-connected { color: green; }
+        .status-disconnected { color: red; }
+        .status-charging { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>EVSE Dashboard</h1>
+
+    <h2>Chargers</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Vendor</th>
+            <th>Model</th>
+            <th>Status</th>
+            <th>Last Heartbeat</th>
+        </tr>
+        {% for charger in chargers %}
+        <tr>
+            <td>{{ charger.id }}</td>
+            <td>{{ charger.vendor|default:"-" }}</td>
+            <td>{{ charger.model|default:"-" }}</td>
+            <td class="status-{{ charger.status }}">{{ charger.status }}</td>
+            <td>{{ charger.last_heartbeat|date:"Y-m-d H:i:s" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No chargers found</td></tr>
+        {% endfor %}
+    </table>
+
+    <h2>Recent Transactions</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Charger</th>
+            <th>Connector</th>
+            <th>ID Tag</th>
+            <th>Meter Start</th>
+            <th>Meter Stop</th>
+            <th>Status</th>
+            <th>Start</th>
+            <th>Stop</th>
+        </tr>
+        {% for tx in transactions %}
+        <tr>
+            <td>{{ tx.transaction_id }}</td>
+            <td>{{ tx.charger.id }}</td>
+            <td>{{ tx.connector_id }}</td>
+            <td>{{ tx.id_tag }}</td>
+            <td>{{ tx.meter_start }}</td>
+            <td>{{ tx.meter_stop|default:"-" }}</td>
+            <td>{{ tx.status }}</td>
+            <td>{{ tx.start_time|date:"Y-m-d H:i:s" }}</td>
+            <td>{{ tx.stop_time|date:"Y-m-d H:i:s"|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9">No transactions found</td></tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
