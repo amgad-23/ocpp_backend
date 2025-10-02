@@ -32,6 +32,15 @@ PyJWT==2.10.1
 pytest==8.4.2
 pytest-django==4.11.1
 pytest-asyncio==0.23.2
+
+# Code Quality & Linting
+black==24.10.0
+flake8==7.1.1
+isort==5.13.2
+mypy==1.13.0
+pre-commit==4.0.1
+bandit==1.8.0
+pylint==3.3.1
 python-dotenv==1.1.1
 referencing==0.36.2
 rpds-py==0.27.1

@@ -1,24 +1,26 @@
 import json
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from drf_yasg.utils import swagger_auto_schema
+
 from drf_yasg import openapi
-from chargers.models import Charger, Transaction, EventLog
-from .serializers import (
-    ChargerSerializer, TransactionSerializer, EventLogSerializer
-)
-from ocpp_server.registry import get_cp, list_cps
+from drf_yasg.utils import swagger_auto_schema
 from ocpp.v16 import call as ocpp_call
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+
+from chargers.models import Charger, EventLog, Transaction
+from ocpp_server.registry import get_cp, list_cps
+
+from .serializers import ChargerSerializer, EventLogSerializer, TransactionSerializer
 
 
 @swagger_auto_schema(
     method="get",
     operation_description="List all registered chargers",
-    responses={200: ChargerSerializer(many=True)}
+    responses={200: ChargerSerializer(many=True)},
 )
 @api_view(["GET"])
 def list_chargers(request):
@@ -29,7 +31,7 @@ def list_chargers(request):
 @swagger_auto_schema(
     method="get",
     operation_description="List recent transactions (last 200)",
-    responses={200: TransactionSerializer(many=True)}
+    responses={200: TransactionSerializer(many=True)},
 )
 @api_view(["GET"])
 def list_transactions(request):
@@ -40,20 +42,22 @@ def list_transactions(request):
 @swagger_auto_schema(
     method="get",
     operation_description="List recent charger event logs",
-    responses={200: EventLogSerializer(many=True)}
+    responses={200: EventLogSerializer(many=True)},
 )
 @api_view(["GET"])
 def list_logs(request):
     qs = EventLog.objects.order_by("-created_at")[:200]
     return Response(EventLogSerializer(qs, many=True).data)
 
+
 start_request_body = openapi.Schema(
     type=openapi.TYPE_OBJECT,
     properties={
         "id_tag": openapi.Schema(type=openapi.TYPE_STRING, description="RFID tag"),
     },
-    required=["id_tag"]
+    required=["id_tag"],
 )
+
 
 @swagger_auto_schema(
     operation_description="Send RemoteStartTransaction to a charger",
@@ -61,10 +65,10 @@ start_request_body = openapi.Schema(
     responses={
         200: openapi.Response("OCPP RemoteStart response"),
         404: "Charger not connected",
-    }
+    },
 )
 @csrf_exempt
-@permission_classes([IsAuthenticated])   # Require JWT auth
+@permission_classes([IsAuthenticated])  # Require JWT auth
 async def remote_start(request, charger_id: str):
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
@@ -78,7 +82,7 @@ async def remote_start(request, charger_id: str):
 
     payload = ocpp_call.RemoteStartTransactionPayload(id_tag=id_tag)
     try:
-        response = await cp.call(payload)   # ✅ Await OCPP response
+        response = await cp.call(payload)  # ✅ Await OCPP response
         return JsonResponse({"status": "ok", "response": response.__dict__})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -88,10 +92,13 @@ async def remote_start(request, charger_id: str):
 stop_request_body = openapi.Schema(
     type=openapi.TYPE_OBJECT,
     properties={
-        "transaction_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="Transaction ID"),
+        "transaction_id": openapi.Schema(
+            type=openapi.TYPE_INTEGER, description="Transaction ID"
+        ),
     },
-    required=["transaction_id"]
+    required=["transaction_id"],
 )
+
 
 @swagger_auto_schema(
     operation_description="Send RemoteStopTransaction to a charger",
@@ -99,10 +106,10 @@ stop_request_body = openapi.Schema(
     responses={
         200: openapi.Response("OCPP RemoteStop response"),
         404: "Charger not connected",
-    }
+    },
 )
 @csrf_exempt
-@permission_classes([IsAuthenticated])   # Require JWT auth
+@permission_classes([IsAuthenticated])  # Require JWT auth
 async def remote_stop(request, charger_id: str):
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
@@ -118,23 +125,29 @@ async def remote_stop(request, charger_id: str):
 
     payload = ocpp_call.RemoteStopTransactionPayload(transaction_id=int(tx_id))
     try:
-        response = await cp.call(payload)   # ✅ Await OCPP response
+        response = await cp.call(payload)  # ✅ Await OCPP response
         return JsonResponse({"status": "ok", "response": response.__dict__})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+
 @swagger_auto_schema(
     method="get",
     operation_description="List currently connected chargers (in-memory registry)",
-    responses={200: openapi.Response("List of active chargers", schema=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            "active_chargers": openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Items(type=openapi.TYPE_STRING)
-            )
-        }
-    ))}
+    responses={
+        200: openapi.Response(
+            "List of active chargers",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "active_chargers": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(type=openapi.TYPE_STRING),
+                    )
+                },
+            ),
+        )
+    },
 )
 @api_view(["GET"])
 def list_active_chargers(request):
@@ -144,7 +157,11 @@ def list_active_chargers(request):
 
 def dashboard(request):
     """Simple dashboard showing chargers and recent transactions."""
-    return render(request, "dashboard.html", {
-        "chargers": Charger.objects.all(),
-        "transactions": Transaction.objects.order_by("-start_time")[:10]
-    })
+    return render(
+        request,
+        "dashboard.html",
+        {
+            "chargers": Charger.objects.all(),
+            "transactions": Transaction.objects.order_by("-start_time")[:10],
+        },
+    )

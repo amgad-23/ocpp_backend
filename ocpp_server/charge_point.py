@@ -1,8 +1,11 @@
 import datetime as dt
+
 from ocpp.routing import on
-from ocpp.v16 import call, call_result
 from ocpp.v16 import ChargePoint as BaseChargePoint
+from ocpp.v16 import call, call_result
+
 from chargers.services import ChargerService, TransactionService
+
 
 class CentralSystemCP(BaseChargePoint):
     def __init__(self, charge_point_id, connection):
@@ -11,8 +14,12 @@ class CentralSystemCP(BaseChargePoint):
         self.tx_service = TransactionService()
 
     @on("BootNotification")
-    async def on_boot_notification(self, charge_point_model, charge_point_vendor, **kwargs):
-        await self.charger_service.on_connected(self.id, charge_point_vendor, charge_point_model)
+    async def on_boot_notification(
+        self, charge_point_model, charge_point_vendor, **kwargs
+    ):
+        await self.charger_service.on_connected(
+            self.id, charge_point_vendor, charge_point_model
+        )
         now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc).isoformat()
         return call_result.BootNotificationPayload(
             current_time=now,
@@ -52,14 +59,17 @@ class CentralSystemCP(BaseChargePoint):
         req = call.RemoteStopTransactionPayload(transaction_id=transaction_id)
         return await self.call(req)
 
-
     @on("StatusNotification")
     async def on_status_notification(self, connector_id, error_code, status, **kwargs):
         # Log status updates
-        print(f"StatusNotification: CP {self.id}, connector {connector_id}, status={status}")
+        print(
+            f"StatusNotification: CP {self.id}, connector {connector_id}, status={status}"
+        )
         return call_result.StatusNotificationPayload()
 
     @on("MeterValues")
     async def on_meter_values(self, connector_id, meter_value, **kwargs):
-        print(f"MeterValues: CP {self.id}, connector {connector_id}, meter={meter_value}")
+        print(
+            f"MeterValues: CP {self.id}, connector {connector_id}, meter={meter_value}"
+        )
         return call_result.MeterValuesPayload()

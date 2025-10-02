@@ -1,15 +1,19 @@
 import pytest
-from django.urls import reverse
 from rest_framework.test import APIClient
+
+from django.urls import reverse
+
 
 @pytest.mark.django_db
 def test_jwt_auth_and_protected_endpoints(admin_user):
     client = APIClient()
 
     # Get JWT token
-    resp = client.post(reverse("token_obtain_pair"),
-                       {"username": "admin", "password": "admin"},
-                       format="json")
+    resp = client.post(
+        reverse("token_obtain_pair"),
+        {"username": "admin", "password": "admin"},
+        format="json",
+    )
     assert resp.status_code == 200
     token = resp.json()["access"]
 
@@ -19,7 +23,8 @@ def test_jwt_auth_and_protected_endpoints(admin_user):
 
     # With token
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    resp = client.post(reverse("remote_start", args=["EVSE-40"]),
-                       {"id_tag": "RFID999"}, format="json")
+    resp = client.post(
+        reverse("remote_start", args=["EVSE-40"]), {"id_tag": "RFID999"}, format="json"
+    )
     # Since no CP is connected, should return 404
     assert resp.status_code == 404

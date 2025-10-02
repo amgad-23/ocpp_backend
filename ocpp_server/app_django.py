@@ -1,7 +1,9 @@
 """Bootstraps Django so the OCPP server can use ORM & services."""
+
 import os
-import django
 from pathlib import Path
+
+import django
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ocpp_backend.settings")

@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Charger, Transaction, EventLog
+
+from .models import Charger, EventLog, Transaction
 
 
 @admin.register(Charger)
@@ -10,7 +11,15 @@ class ChargerAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ("transaction_id", "charger", "connector_id", "id_tag", "status", "start_time", "stop_time")
+    list_display = (
+        "transaction_id",
+        "charger",
+        "connector_id",
+        "id_tag",
+        "status",
+        "start_time",
+        "stop_time",
+    )
     search_fields = ("id_tag",)
 
 

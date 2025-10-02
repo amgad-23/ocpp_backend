@@ -183,6 +183,69 @@ curl -X POST http://localhost:8000/api/chargers/EVSE-001/start/ \
 
 ## 🧪 Testing & Development
 
+### Code Quality & Linting
+
+This project uses comprehensive linting tools to maintain code quality:
+
+#### **Quick Setup**
+```bash
+# Install all dependencies including linting tools
+make install
+
+# Or manually
+pip install -r requirements.txt
+pre-commit install
+```
+
+#### **Linting Commands**
+```bash
+# Run all linting checks
+make lint
+
+# Individual tools
+make format      # Black + isort formatting
+make type-check  # MyPy type checking
+make security    # Bandit security analysis
+make flake8      # Style and complexity checks
+make pylint      # Code analysis
+
+# Django-specific checks
+make django-check
+```
+
+#### **Linting Tools Overview**
+
+| Tool | Purpose | Configuration |
+|------|---------|---------------|
+| **Black** | Code formatting (PEP 8 compliant) | `pyproject.toml` |
+| **isort** | Import statement sorting | `pyproject.toml` |
+| **flake8** | Style guide enforcement | `.flake8` |
+| **mypy** | Static type checking | `pyproject.toml` |
+| **bandit** | Security vulnerability scanning | `pyproject.toml` |
+| **pylint** | Code analysis and quality metrics | `pyproject.toml` |
+| **pre-commit** | Automated git hooks | `.pre-commit-config.yaml` |
+
+#### **Automated Linting**
+Pre-commit hooks automatically run on every commit:
+- **Black**: Code formatting (88 char line length)
+- **isort**: Import sorting (Django-aware)
+- **flake8**: Style checking (complexity < 10)
+- **mypy**: Type checking (with Django plugin)
+- **bandit**: Security analysis (excludes test files)
+- **Django checks**: Model and migration validation
+
+#### **Development Workflow**
+```bash
+# Setup development environment
+make dev-setup
+
+# Before committing (runs automatically via pre-commit)
+make dev-check
+
+# Simulate CI pipeline
+make ci
+```
+
 ### Running Tests
 ```bash
 # For Docker setup
@@ -192,7 +255,11 @@ docker-compose exec web pytest
 pytest
 
 # With coverage report
-pytest --cov=.
+pytest --cov=. --cov-report=html
+
+# Using Makefile
+make test
+make test-async  # Run async-specific tests
 ```
 
 ### Testing OCPP Connection

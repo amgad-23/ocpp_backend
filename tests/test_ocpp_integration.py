@@ -1,16 +1,18 @@
-import pytest
 import asyncio
+
+import pytest
 import websockets
 from ocpp.v16 import ChargePoint as CP
 from ocpp.v16 import call
 
+
 class DummyCP(CP):
     async def start_boot(self):
         req = call.BootNotificationPayload(
-            charge_point_model="TestModel",
-            charge_point_vendor="TestVendor"
+            charge_point_model="TestModel", charge_point_vendor="TestVendor"
         )
         return await self.call(req)
+
 
 @pytest.mark.asyncio
 async def test_bootnotification_integration():

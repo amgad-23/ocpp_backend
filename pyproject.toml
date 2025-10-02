@@ -1,0 +1,108 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+# Black code formatter configuration
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    # directories
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+[tool.isort]
+# Import sorting configuration
+profile = "black"
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+skip_glob = ["*/migrations/*", "venv/*", ".venv/*"]
+known_django = "django"
+known_first_party = ["chargers", "ocpp_server", "ocpp_backend"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "DJANGO", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.mypy]
+# Type checking configuration
+python_version = "3.11"
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Set to true for stricter typing
+disallow_incomplete_defs = false  # Set to true for stricter typing
+disallow_untyped_calls = false  # Set to true for stricter typing
+
+# Django-specific settings
+plugins = ["mypy_django_plugin.main"]
+
+[[tool.mypy.overrides]]
+module = "*.migrations.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.django-stubs]
+django_settings_module = "ocpp_backend.settings"
+
+[tool.pylint]
+# Pylint configuration
+load-plugins = ["pylint_django"]
+django-settings-module = "ocpp_backend.settings"
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-docstring",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "too-many-statements",
+    "duplicate-code",
+    "import-error",
+    "no-member",  # Django models have dynamic attributes
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.bandit]
+# Security linter configuration
+exclude_dirs = ["tests", "venv", ".venv", "migrations"]
+skips = ["B101"]  # Skip assert_used test
+
+[tool.pytest.ini_options]
+# Pytest configuration
+DJANGO_SETTINGS_MODULE = "ocpp_backend.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]

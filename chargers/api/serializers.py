@@ -1,32 +1,49 @@
 from rest_framework import serializers
-from chargers.models import (Charger, Transaction, EventLog, Connector, ConnectorTransaction)
+
+from chargers.models import (
+    Charger,
+    Connector,
+    ConnectorTransaction,
+    EventLog,
+    Transaction,
+)
 
 
 class ChargerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Charger
-        fields = ["id", "vendor", "model", "status", "last_heartbeat", "connected_at", "updated_at"]
+        fields = [
+            "id",
+            "vendor",
+            "model",
+            "status",
+            "last_heartbeat",
+            "connected_at",
+            "updated_at",
+        ]
 
 
 class TransactionSerializer(serializers.ModelSerializer):
     charger = serializers.SlugRelatedField(slug_field="id", read_only=True)
+
     class Meta:
         model = Transaction
         fields = [
-        "transaction_id",
-        "charger",
-        "connector_id",
-        "id_tag",
-        "meter_start",
-        "meter_stop",
-        "start_time",
-        "stop_time",
-        "status",
+            "transaction_id",
+            "charger",
+            "connector_id",
+            "id_tag",
+            "meter_start",
+            "meter_stop",
+            "start_time",
+            "stop_time",
+            "status",
         ]
 
 
 class EventLogSerializer(serializers.ModelSerializer):
     charger = serializers.SlugRelatedField(slug_field="id", read_only=True)
+
     class Meta:
         model = EventLog
         fields = ["id", "charger", "event", "message", "created_at"]
@@ -34,14 +51,23 @@ class EventLogSerializer(serializers.ModelSerializer):
 
 class ConnectorSerializer(serializers.ModelSerializer):
     charger = serializers.SlugRelatedField(slug_field="id", read_only=True)
+
     class Meta:
         model = Connector
-        fields = ["id", "charger", "connector_id", "status", "last_heartbeat", "updated_at"]
+        fields = [
+            "id",
+            "charger",
+            "connector_id",
+            "status",
+            "last_heartbeat",
+            "updated_at",
+        ]
 
 
 class ConnectorTransactionSerializer(serializers.ModelSerializer):
     connector = serializers.SlugRelatedField(slug_field="id", read_only=True)
     transaction = serializers.SlugRelatedField(slug_field="id", read_only=True)
+
     class Meta:
         model = ConnectorTransaction
         fields = ["id", "connector", "transaction", "updated_at"]
@@ -81,4 +107,3 @@ class ChargerHeartbeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Charger
         fields = ["last_heartbeat"]
-

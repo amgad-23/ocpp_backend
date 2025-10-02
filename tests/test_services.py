@@ -1,6 +1,8 @@
 import pytest
-from chargers.services import ChargerService, TransactionService
+
 from chargers.models import Charger, TransactionStatusChoices
+from chargers.services import ChargerService, TransactionService
+
 
 @pytest.mark.django_db
 def test_charger_service_boot_and_heartbeat():
@@ -9,6 +11,7 @@ def test_charger_service_boot_and_heartbeat():
     assert c.vendor == "VendorX"
     cs.on_heartbeat("EVSE-20")
     assert Charger.objects.get(id="EVSE-20").last_heartbeat is not None
+
 
 @pytest.mark.django_db
 def test_transaction_service_start_and_stop():

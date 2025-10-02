@@ -1,0 +1,50 @@
+[flake8]
+# Configuration for flake8 code style checker
+
+# Maximum line length
+max-line-length = 88
+
+# Exclude directories and files
+exclude = 
+    .git,
+    __pycache__,
+    venv,
+    .venv,
+    migrations,
+    .pytest_cache,
+    node_modules,
+    build,
+    dist,
+    *.egg-info
+
+# Ignore specific error codes
+ignore = 
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E501: line too long (handled by black)
+    E501,
+    # F401: imported but unused (handled by isort/mypy)
+    F401
+
+# Select specific error codes to check
+select = 
+    E,  # pycodestyle errors
+    W,  # pycodestyle warnings
+    F,  # pyflakes
+    C,  # mccabe complexity
+
+# Maximum complexity
+max-complexity = 10
+
+# Per-file ignores
+per-file-ignores =
+    # Django settings can have long lines and unused imports
+    */settings.py:E501,F401,F403
+    # Test files can have long lines
+    tests/*.py:E501
+    # Migration files are auto-generated
+    */migrations/*.py:E501,F401,F403
+    # __init__.py files often have unused imports
+    __init__.py:F401

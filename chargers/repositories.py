@@ -1,6 +1,17 @@
-from django.utils import timezone
 from asgiref.sync import sync_to_async
-from .models import (Charger, Transaction, EventLog, StatusChoices, Connector, ConnectorTransaction, ConnectorTransactionStatusChoices, TransactionStatusChoices)
+
+from django.utils import timezone
+
+from .models import (
+    Charger,
+    Connector,
+    ConnectorTransaction,
+    ConnectorTransactionStatusChoices,
+    EventLog,
+    StatusChoices,
+    Transaction,
+    TransactionStatusChoices,
+)
 
 
 class ChargerRepository:
@@ -12,7 +23,7 @@ class ChargerRepository:
             obj.vendor = vendor
         if model is not None:
             obj.model = model
-            obj.status = StatusChoices.CONNECTED    
+            obj.status = StatusChoices.CONNECTED
             obj.connected_at = obj.connected_at or timezone.now()
             obj.save()
         return obj
@@ -25,7 +36,9 @@ class ChargerRepository:
     @staticmethod
     @sync_to_async
     def set_heartbeat(charger_id: str):
-        return Charger.objects.filter(id=charger_id).update(last_heartbeat=timezone.now())
+        return Charger.objects.filter(id=charger_id).update(
+            last_heartbeat=timezone.now()
+        )
 
 
 class TransactionRepository:
@@ -64,6 +77,7 @@ class ConnectorRepository:
     @staticmethod
     @sync_to_async
     def upsert(charger_id: str, connector_id: int):
-        obj, _ = Connector.objects.get_or_create(charger_id=charger_id, connector_id=connector_id)
+        obj, _ = Connector.objects.get_or_create(
+            charger_id=charger_id, connector_id=connector_id
+        )
         return obj
-
