@@ -12,7 +12,7 @@ class CentralSystemCP(BaseChargePoint):
 
     @on("BootNotification")
     async def on_boot_notification(self, charge_point_model, charge_point_vendor, **kwargs):
-        self.charger_service.on_connected(self.id, charge_point_vendor, charge_point_model)
+        await self.charger_service.on_connected(self.id, charge_point_vendor, charge_point_model)
         now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc).isoformat()
         return call_result.BootNotificationPayload(
             current_time=now,
@@ -22,7 +22,7 @@ class CentralSystemCP(BaseChargePoint):
 
     @on("Heartbeat")
     async def on_heartbeat(self):
-        self.charger_service.on_heartbeat(self.id)
+        await self.charger_service.on_heartbeat(self.id)
         now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc).isoformat()
         return call_result.HeartbeatPayload(current_time=now)
 
@@ -33,7 +33,7 @@ class CentralSystemCP(BaseChargePoint):
 
     @on("StartTransaction")
     async def on_start_transaction(self, id_tag, connector_id, meter_start, **kwargs):
-        tx = self.tx_service.start(self.id, connector_id, id_tag, meter_start)
+        tx = await self.tx_service.start(self.id, connector_id, id_tag, meter_start)
         return call_result.StartTransactionPayload(
             transaction_id=tx.transaction_id,
             id_tag_info={"status": "Accepted"},
@@ -41,7 +41,7 @@ class CentralSystemCP(BaseChargePoint):
 
     @on("StopTransaction")
     async def on_stop_transaction(self, transaction_id, meter_stop=None, **kwargs):
-        self.tx_service.stop(transaction_id, self.id, meter_stop)
+        await self.tx_service.stop(transaction_id, self.id, meter_stop)
         return call_result.StopTransactionPayload(id_tag_info={"status": "Accepted"})
 
     async def remote_start(self, id_tag: str):

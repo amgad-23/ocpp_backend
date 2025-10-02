@@ -31,6 +31,7 @@ Pygments==2.19.2
 PyJWT==2.10.1
 pytest==8.4.2
 pytest-django==4.11.1
+pytest-asyncio==0.23.2
 python-dotenv==1.1.1
 referencing==0.36.2
 rpds-py==0.27.1
