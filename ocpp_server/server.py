@@ -1,3 +1,10 @@
+"""OCPP 1.6 WebSocket server entrypoint.
+
+Exposes an async server that accepts multiple concurrent charge point
+connections. Each new connection is wrapped in a `CentralSystemCP` instance
+and registered in the in-memory registry for later lookup by the HTTP API.
+"""
+
 import asyncio
 import os
 
@@ -13,6 +20,13 @@ PORT = int(os.getenv("OCPP_WS_PORT", 9000))
 
 
 async def on_connect(websocket, path):
+    """Handle a new WebSocket connection from a charge point.
+
+    - Extracts the OCPP charge point id from the URL path.
+    - Registers the connection in the registry for cross-process access.
+    - Starts the OCPP message loop until the connection closes.
+    - Ensures cleanup by unregistering the charger on exit.
+    """
     charge_point_id = path.strip("/") or "unknown-cp"
     cp = CentralSystemCP(charge_point_id, websocket)
     register_cp(charge_point_id, cp)
@@ -23,6 +37,7 @@ async def on_connect(websocket, path):
 
 
 async def main():
+    """Start the OCPP WebSocket server and run indefinitely."""
     async with websockets.serve(
         on_connect, host=HOST, port=PORT, subprotocols=["ocpp1.6"]
     ):

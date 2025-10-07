@@ -1,3 +1,5 @@
+"""DRF serializers for chargers, connectors, transactions, and logs."""
+
 from rest_framework import serializers
 
 from chargers.models import (
@@ -10,6 +12,7 @@ from chargers.models import (
 
 
 class ChargerSerializer(serializers.ModelSerializer):
+    """Serialize `Charger` metadata and state."""
     class Meta:
         model = Charger
         fields = [
@@ -24,6 +27,7 @@ class ChargerSerializer(serializers.ModelSerializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    """Serialize `Transaction` including charger id via slug field."""
     charger = serializers.SlugRelatedField(slug_field="id", read_only=True)
 
     class Meta:
@@ -42,6 +46,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 
 class EventLogSerializer(serializers.ModelSerializer):
+    """Serialize `EventLog` entries with charger id."""
     charger = serializers.SlugRelatedField(slug_field="id", read_only=True)
 
     class Meta:
@@ -50,6 +55,7 @@ class EventLogSerializer(serializers.ModelSerializer):
 
 
 class ConnectorSerializer(serializers.ModelSerializer):
+    """Serialize `Connector` details and status."""
     charger = serializers.SlugRelatedField(slug_field="id", read_only=True)
 
     class Meta:
@@ -65,6 +71,7 @@ class ConnectorSerializer(serializers.ModelSerializer):
 
 
 class ConnectorTransactionSerializer(serializers.ModelSerializer):
+    """Serialize connector-to-transaction relationships."""
     connector = serializers.SlugRelatedField(slug_field="id", read_only=True)
     transaction = serializers.SlugRelatedField(slug_field="id", read_only=True)
 
@@ -74,36 +81,42 @@ class ConnectorTransactionSerializer(serializers.ModelSerializer):
 
 
 class ConnectorTransactionStatusSerializer(serializers.ModelSerializer):
+    """Partial serializer to update a connector-transaction status."""
     class Meta:
         model = ConnectorTransaction
         fields = ["status"]
 
 
 class TransactionStatusSerializer(serializers.ModelSerializer):
+    """Partial serializer to update a transaction status."""
     class Meta:
         model = Transaction
         fields = ["status"]
 
 
 class ConnectorStatusSerializer(serializers.ModelSerializer):
+    """Partial serializer to update a connector status."""
     class Meta:
         model = Connector
         fields = ["status"]
 
 
 class ChargerStatusSerializer(serializers.ModelSerializer):
+    """Partial serializer to update a charger status."""
     class Meta:
         model = Charger
         fields = ["status"]
 
 
 class ConnectorHeartbeatSerializer(serializers.ModelSerializer):
+    """Partial serializer to update a connector heartbeat timestamp."""
     class Meta:
         model = Connector
         fields = ["last_heartbeat"]
 
 
 class ChargerHeartbeatSerializer(serializers.ModelSerializer):
+    """Partial serializer to update a charger heartbeat timestamp."""
     class Meta:
         model = Charger
         fields = ["last_heartbeat"]

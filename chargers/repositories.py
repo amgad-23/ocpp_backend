@@ -1,3 +1,9 @@
+"""Async-friendly data access layer using Django ORM.
+
+All repository methods wrap synchronous ORM calls with `sync_to_async` so
+they can be awaited from async contexts without blocking the event loop.
+"""
+
 from asgiref.sync import sync_to_async
 
 from django.utils import timezone
@@ -15,6 +21,7 @@ from .models import (
 
 
 class ChargerRepository:
+    """CRUD operations for `Charger` with async wrappers."""
     @staticmethod
     @sync_to_async
     def upsert(charger_id: str, vendor: str | None, model: str | None):
@@ -42,6 +49,7 @@ class ChargerRepository:
 
 
 class TransactionRepository:
+    """Create/update `Transaction` records via async wrappers."""
     @staticmethod
     @sync_to_async
     def start(charger_id: str, connector_id: int, id_tag: str, meter_start: int):
@@ -66,6 +74,7 @@ class TransactionRepository:
 
 
 class EventLogRepository:
+    """Append structured event logs for chargers."""
     @staticmethod
     @sync_to_async
     def log(charger_id: str, event: str, message: str):
@@ -74,6 +83,7 @@ class EventLogRepository:
 
 
 class ConnectorRepository:
+    """Manage `Connector` records with async wrappers."""
     @staticmethod
     @sync_to_async
     def upsert(charger_id: str, connector_id: int):

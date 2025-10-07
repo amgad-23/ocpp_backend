@@ -1,7 +1,10 @@
+"""Django models representing chargers, transactions, connectors, and logs."""
+
 from django.db import models
 
 
 class StatusChoices(models.TextChoices):
+    """Lifecycle/availability states for a charger."""
     DISCONNECTED = "disconnected"
     CONNECTED = "connected"
     AVAILABLE = "available"
@@ -10,6 +13,7 @@ class StatusChoices(models.TextChoices):
 
 
 class Charger(models.Model):
+    """Physical OCPP charge point managed by the central system."""
     id = models.CharField(primary_key=True, max_length=64)  # OCPP chargePointId
     vendor = models.CharField(max_length=128, blank=True, null=True)
     model = models.CharField(max_length=128, blank=True, null=True)
@@ -25,11 +29,13 @@ class Charger(models.Model):
 
 
 class TransactionStatusChoices(models.TextChoices):
+    """Transaction lifecycle states."""
     ACTIVE = "active"
     STOPPED = "stopped"
 
 
 class Transaction(models.Model):
+    """Charging session initiated by a StartTransaction and finalized by StopTransaction."""
     transaction_id = models.BigAutoField(primary_key=True)
     charger = models.ForeignKey(
         Charger, on_delete=models.CASCADE, related_name="transactions"
@@ -51,6 +57,7 @@ class Transaction(models.Model):
 
 
 class EventLog(models.Model):
+    """Append-only event log entries for charger-related events."""
     charger = models.ForeignKey(Charger, on_delete=models.CASCADE, related_name="logs")
     event = models.CharField(max_length=64)
     message = models.TextField()
@@ -61,12 +68,14 @@ class EventLog(models.Model):
 
 
 class ConnectorStatusChoices(models.TextChoices):
+    """Per-connector availability/health states."""
     AVAILABLE = "available"
     OCCUPIED = "occupied"
     FAULTED = "faulted"
 
 
 class Connector(models.Model):
+    """A physical connector on a charger (e.g., socket or cable)."""
     charger = models.ForeignKey(
         Charger, on_delete=models.CASCADE, related_name="connectors"
     )
@@ -84,6 +93,7 @@ class Connector(models.Model):
 
 
 class ConnectorTransactionStatusChoices(models.TextChoices):
+    """Connector-transaction association states (for advanced workflows)."""
     ACTIVE = "active"
     STOPPED = "stopped"
     FAULTED = "faulted"
@@ -95,6 +105,7 @@ class ConnectorTransactionStatusChoices(models.TextChoices):
 
 
 class ConnectorTransaction(models.Model):
+    """Join model relating a connector to a transaction (optional enrichment)."""
     connector = models.ForeignKey(
         Connector, on_delete=models.CASCADE, related_name="transactions"
     )

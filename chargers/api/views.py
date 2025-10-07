@@ -1,3 +1,5 @@
+"""REST API endpoints for listing data and sending remote OCPP commands."""
+
 import json
 
 from drf_yasg import openapi
@@ -24,6 +26,7 @@ from .serializers import ChargerSerializer, EventLogSerializer, TransactionSeria
 )
 @api_view(["GET"])
 def list_chargers(request):
+    """Return all registered chargers from the database, ordered by id."""
     qs = Charger.objects.order_by("id")
     return Response(ChargerSerializer(qs, many=True).data)
 
@@ -35,6 +38,7 @@ def list_chargers(request):
 )
 @api_view(["GET"])
 def list_transactions(request):
+    """Return the last 200 transactions, newest first."""
     qs = Transaction.objects.order_by("-start_time")[:200]
     return Response(TransactionSerializer(qs, many=True).data)
 
@@ -46,6 +50,7 @@ def list_transactions(request):
 )
 @api_view(["GET"])
 def list_logs(request):
+    """Return the last 200 event logs, newest first."""
     qs = EventLog.objects.order_by("-created_at")[:200]
     return Response(EventLogSerializer(qs, many=True).data)
 
@@ -70,6 +75,7 @@ start_request_body = openapi.Schema(
 @csrf_exempt
 @permission_classes([IsAuthenticated])  # Require JWT auth
 async def remote_start(request, charger_id: str):
+    """Send RemoteStartTransaction to a connected charger and return its response."""
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -80,7 +86,7 @@ async def remote_start(request, charger_id: str):
     body = json.loads(request.body.decode("utf-8")) if request.body else {}
     id_tag = body.get("id_tag", "DEMO123")
 
-    payload = ocpp_call.RemoteStartTransactionPayload(id_tag=id_tag)
+    payload = ocpp_call.RemoteStartTransaction(id_tag=id_tag)
     try:
         response = await cp.call(payload)  # ✅ Await OCPP response
         return JsonResponse({"status": "ok", "response": response.__dict__})
@@ -111,6 +117,7 @@ stop_request_body = openapi.Schema(
 @csrf_exempt
 @permission_classes([IsAuthenticated])  # Require JWT auth
 async def remote_stop(request, charger_id: str):
+    """Send RemoteStopTransaction to a connected charger and return its response."""
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -123,7 +130,7 @@ async def remote_stop(request, charger_id: str):
     if not tx_id:
         return JsonResponse({"error": "transaction_id required"}, status=400)
 
-    payload = ocpp_call.RemoteStopTransactionPayload(transaction_id=int(tx_id))
+    payload = ocpp_call.RemoteStopTransaction(transaction_id=int(tx_id))
     try:
         response = await cp.call(payload)  # ✅ Await OCPP response
         return JsonResponse({"status": "ok", "response": response.__dict__})
