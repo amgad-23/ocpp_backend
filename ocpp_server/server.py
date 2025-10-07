@@ -19,19 +19,18 @@ HOST = os.getenv("OCPP_WS_HOST", "0.0.0.0")
 PORT = int(os.getenv("OCPP_WS_PORT", 9000))
 
 
-async def on_connect(websocket, path):
-    """Handle a new WebSocket connection from a charge point.
-
-    - Extracts the OCPP charge point id from the URL path.
-    - Registers the connection in the registry for cross-process access.
-    - Starts the OCPP message loop until the connection closes.
-    - Ensures cleanup by unregistering the charger on exit.
-    """
+async def on_connect(websocket):
+    path = websocket.request.path if hasattr(websocket, "request") else "/unknown"
     charge_point_id = path.strip("/") or "unknown-cp"
+
+
     cp = CentralSystemCP(charge_point_id, websocket)
     register_cp(charge_point_id, cp)
     try:
         await cp.start()
+    except Exception as e:
+        if "ConnectionClosed" not in str(type(e)):
+            print(f"Unexpected error from {charge_point_id}: {e}")
     finally:
         unregister_cp(charge_point_id)
 

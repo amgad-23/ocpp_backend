@@ -34,11 +34,16 @@ class CentralSystemCP(BaseChargePoint):
             self.id, charge_point_vendor, charge_point_model
         )
         now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc).isoformat()
-        return call_result.BootNotification(
-            current_time=now,
-            interval=10,
-            status= RegistrationStatus.accepted,
-        )
+        try:
+            cp = call_result.BootNotification(
+                current_time=now,
+                interval=10,
+                status=RegistrationStatus.accepted,
+            )
+            return cp
+        except Exception as e:
+            print(f"Error creating BootNotification response: {e}")
+            raise
 
     @on("Heartbeat")
     async def on_heartbeat(self):
