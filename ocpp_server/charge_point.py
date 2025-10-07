@@ -69,7 +69,7 @@ class CentralSystemCP(BaseChargePoint):
     @on("StopTransaction")
     async def on_stop_transaction(self, transaction_id, meter_stop=None, **kwargs):
         """Handle StopTransaction; finalize transaction and accept."""
-        await self.tx_service.stop(transaction_id, self.id, meter_stop)
+        self.tx_service.stop(transaction_id, self.id, meter_stop)
         return call_result.StopTransaction(id_tag_info=IdTagInfo(status=AuthorizationStatus.accepted))
 
     async def remote_start(self, id_tag: str):
