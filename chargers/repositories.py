@@ -72,6 +72,17 @@ class TransactionRepository:
         tx.save()
         return tx
 
+    @staticmethod
+    @sync_to_async
+    def latest_started_for_charger(charger_id: str):
+        return (
+            Transaction.objects.filter(
+                charger_id=charger_id, status=TransactionStatusChoices.ACTIVE
+            )
+            .order_by("-start_time")
+            .first()
+        )
+
 
 class EventLogRepository:
     """Append structured event logs for chargers."""

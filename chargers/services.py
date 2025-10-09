@@ -49,3 +49,7 @@ class TransactionService:
             charger_id, "StopTransaction", f"tx={tx.transaction_id}"
         )
         return tx
+
+    async def latest_started(self, charger_id: str):
+        """Return the most recent started transaction for a charger, if any."""
+        return await TransactionRepository.latest_started_for_charger(charger_id)
