@@ -9,6 +9,7 @@ import asyncio
 import os
 
 import websockets
+import uvicorn
 
 # Initialize Django
 from .app_django import *  # noqa
@@ -35,17 +36,30 @@ async def on_connect(websocket):
 
 
 async def main():
-    """Start the OCPP WebSocket server and run indefinitely."""
+    """Start the OCPP WebSocket server and the HTTP control API."""
+    # Start FastAPI (HTTP control API) alongside the websocket server
+    http_host = os.getenv("OCPP_HTTP_HOST", "0.0.0.0")
+    http_port = int(os.getenv("OCPP_HTTP_PORT", 9100))
+    config = uvicorn.Config(
+        "ocpp_server.http_api:app",
+        host=http_host,
+        port=http_port,
+        log_level="info",
+        lifespan="off",
+    )
+    http_server = uvicorn.Server(config)
+
     async with websockets.serve(
-            on_connect,
-            host=HOST,
-            port=PORT,
-            subprotocols=["ocpp1.6"],
-            ping_interval=60,
-            ping_timeout=60,
+        on_connect,
+        host=HOST,
+        port=PORT,
+        subprotocols=["ocpp1.6"],
+        ping_interval=60,
+        ping_timeout=60,
     ):
         print(f"OCPP 1.6 server running at ws://{HOST}:{PORT}")
-        await asyncio.Future()
+        print(f"OCPP HTTP API running at http://{http_host}:{http_port}")
+        await http_server.serve()
 
 
 if __name__ == "__main__":

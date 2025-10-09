@@ -14,29 +14,80 @@
     </style>
 </head>
 <body>
-    <h1>EVSE Dashboard</h1>
+    <div id="authBanner" style="display:none; background:#fff3cd; color:#664d03; border:1px solid #ffecb5; padding:10px 12px; margin-bottom:12px; border-radius:4px;">
+        Authentication required for actions. Please <a href="/admin/login/?next=/" style="color:#664d03; text-decoration:underline;">sign in</a> and retry.
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1>EVSE Dashboard</h1>
+        <div>
+            {% if request.user.is_authenticated %}
+                <span>Signed in as {{ request.user.get_username }}</span>
+                <form action="/logout/" method="post" style="display:inline; margin-left:8px;">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="/admin/login/?next=/">Sign in</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin: 10px 0;">
+        <button id="btnAddCharger">Add Charger</button>
+    </div>
+
+    <!-- Add Charger Modal -->
+    <div id="modal" style="display:none; position:fixed; inset:0; background: rgba(0,0,0,0.5);">
+        <div style="background:#fff; max-width:420px; margin:10% auto; padding:20px; border-radius:6px;">
+            <h3>Add Charger</h3>
+            <label>ID*<br><input id="newId" maxlength="64" placeholder="EVSE-001"/></label><br><br>
+            <label>Vendor<br><input id="newVendor" placeholder="Acme"/></label><br><br>
+            <label>Model<br><input id="newModel" placeholder="X100"/></label><br><br>
+            <div style="text-align:right;">
+                <button id="cancelAdd">Cancel</button>
+                <button id="saveAdd">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toasts" style="position:fixed; top:12px; right:12px; z-index:9999;"></div>
 
     <h2>Chargers</h2>
     <table>
+        <thead>
         <tr>
             <th>ID</th>
             <th>Vendor</th>
             <th>Model</th>
             <th>Status</th>
             <th>Last Heartbeat</th>
+            <th>Actions</th>
         </tr>
+        </thead>
+        <tbody id="chargersBody">
         {% for charger in chargers %}
         <tr>
-            <td>{{ charger.id }}</td>
-            <td>{{ charger.vendor|default:"-" }}</td>
-            <td>{{ charger.model|default:"-" }}</td>
+            <td class="col-id">{{ charger.id }}</td>
+            <td class="col-vendor">{{ charger.vendor|default:"-" }}</td>
+            <td class="col-model">{{ charger.model|default:"-" }}</td>
             <td class="status-{{ charger.status }}">{{ charger.status }}</td>
             <td>{{ charger.last_heartbeat|date:"Y-m-d H:i:s" }}</td>
+            <td>
+                <button class="btnStart" data-id="{{ charger.id }}">Start</button>
+                <button class="btnStop" data-id="{{ charger.id }}">Stop</button>
+                <button class="btnHeartbeat" data-id="{{ charger.id }}">Trigger HB</button>
+                <button class="btnCpConnect" data-id="{{ charger.id }}">CP Connect</button>
+                <button class="btnSendHb" data-id="{{ charger.id }}">Send HB</button>
+            </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5">No chargers found</td></tr>
+        <tr><td colspan="6">No chargers found</td></tr>
         {% endfor %}
+        </tbody>
     </table>
+    <div style="font-size: 12px; color:#555; margin-top:-18px; margin-bottom: 24px;">
+        Hint: Connect a charge point via WebSocket at <code>ws://localhost/ocpp/&lt;ID&gt;</code> (e.g., <code>ws://localhost/ocpp/EVSE-001</code>) to mark it connected. The "CP Connect" button opens a simple browser client for quick testing.
+    </div>
 
     <h2>Recent Transactions</h2>
     <table>
@@ -67,5 +118,263 @@
         <tr><td colspan="9">No transactions found</td></tr>
         {% endfor %}
     </table>
+
+    <script>
+    // CSRF token helper (cookie-based)
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // Toast notifications
+    function toast(msg, type = 'info') {
+      const d = document.createElement('div');
+      d.textContent = msg;
+      d.style.marginTop = '8px';
+      d.style.padding = '10px 12px';
+      d.style.borderRadius = '4px';
+      d.style.color = '#fff';
+      d.style.background = type === 'error' ? '#d9534f' : (type === 'success' ? '#5cb85c' : '#5bc0de');
+      document.getElementById('toasts').appendChild(d);
+      setTimeout(() => d.remove(), 4000);
+    }
+
+    // Modal controls
+    const modal = document.getElementById('modal');
+    document.getElementById('btnAddCharger').onclick = () => { modal.style.display = 'block'; };
+    document.getElementById('cancelAdd').onclick = () => { modal.style.display = 'none'; };
+    document.getElementById('saveAdd').onclick = async () => {
+      const id = document.getElementById('newId').value.trim();
+      const vendor = document.getElementById('newVendor').value.trim();
+      const model = document.getElementById('newModel').value.trim();
+      if (!id) { toast('ID is required', 'error'); return; }
+      const idOk = /^[A-Za-z0-9_.:-]{1,64}$/.test(id);
+      if (!idOk) { toast('Invalid ID. Use 1-64 of A-Z, a-z, 0-9, _ . : -', 'error'); return; }
+      try {
+        const res = await fetch('/chargers/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') || '' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ id, vendor: vendor || undefined, model: model || undefined })
+        });
+        if (!res.ok) { const e = await res.json().catch(()=>({error:res.statusText})); throw new Error(e.error || 'Failed to save'); }
+        toast('Charger saved', 'success');
+        modal.style.display = 'none';
+        document.getElementById('newId').value = '';
+        document.getElementById('newVendor').value = '';
+        document.getElementById('newModel').value = '';
+        await refreshChargers();
+      } catch (e) { toast(e.message, 'error'); }
+    };
+
+    async function fetchJSON(url) {
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      return res.json();
+    }
+
+    async function refreshChargers() {
+      try {
+        const [all, active] = await Promise.all([
+          fetchJSON('/chargers/'),
+          fetchJSON('/chargers/active/')
+        ]);
+        const activeSet = new Set(active.active_chargers || []);
+        const tbody = document.getElementById('chargersBody');
+        tbody.innerHTML = '';
+        all.forEach(c => {
+          const tr = document.createElement('tr');
+          const status = activeSet.has(c.id) ? 'connected' : (c.status || 'disconnected');
+          tr.innerHTML = `
+            <td class="col-id">${c.id}</td>
+            <td class="col-vendor">${c.vendor || '-'}</td>
+            <td class="col-model">${c.model || '-'}</td>
+            <td class="status-${status}">${status}</td>
+            <td>${c.last_heartbeat || '-'}</td>
+            <td>
+              <button class="btnStart" data-id="${c.id}">Start</button>
+              <button class="btnStop" data-id="${c.id}">Stop</button>
+              <button class="btnHeartbeat" data-id="${c.id}">Trigger HB</button>
+              <button class="btnCpConnect" data-id="${c.id}">CP Connect</button>
+              <button class="btnSendHb" data-id="${c.id}">Send HB</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) { toast(e.message, 'error'); }
+    }
+
+    async function postJSON(url, payload) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') || '' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload || {})
+      });
+      if (res.status === 401) {
+        document.getElementById('authBanner').style.display = 'block';
+        throw new Error('Authentication required');
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({error:res.statusText}));
+        throw new Error(err.error || 'Request failed');
+      }
+      return res.json();
+    }
+
+    // Delegate actions
+    document.addEventListener('click', async (e) => {
+      const t = e.target;
+      if (t.classList.contains('btnStart')) {
+        const id = t.getAttribute('data-id');
+        const tag = prompt('Enter id_tag for RemoteStart', 'DEMO123');
+        if (!tag) return;
+        try { await postJSON(`/ocpp-control/${id}/start/`, { id_tag: tag }); toast('RemoteStart sent', 'success'); } catch (err) { toast(err.message, 'error'); }
+      }
+      if (t.classList.contains('btnStop')) {
+        const id = t.getAttribute('data-id');
+        const tx = prompt('Enter transaction_id to stop (leave blank for latest)') || '';
+        const payload = {};
+        if (tx.trim()) {
+          const n = Number(tx.trim());
+          if (!Number.isNaN(n) && Number.isFinite(n)) payload.transaction_id = n;
+        }
+        try { await postJSON(`/ocpp-control/${id}/stop/`, payload); toast('RemoteStop sent', 'success'); } catch (err) { toast(err.message, 'error'); }
+      }
+      if (t.classList.contains('btnHeartbeat')) {
+        const id = t.getAttribute('data-id');
+        try { await postJSON(`/ocpp-control/${id}/trigger/heartbeat/`, {}); toast('Heartbeat requested', 'success'); } catch (err) { toast(err.message, 'error'); }
+      }
+
+      if (t.classList.contains('btnCpConnect')) {
+        const id = t.getAttribute('data-id');
+        try { await cpConnect(id, t); } catch (err) { toast(err.message, 'error'); }
+      }
+      if (t.classList.contains('btnSendHb')) {
+        const id = t.getAttribute('data-id');
+        try { await cpSendHeartbeat(id); } catch (err) { toast(err.message, 'error'); }
+      }
+    });
+
+    // Initial refresh + polling
+    refreshChargers();
+    setInterval(refreshChargers, 15000);
+
+    // --- Minimal in-browser OCPP client (for quick testing) ---
+    const cpSockets = new Map(); // id -> WebSocket
+    const cpState = new Map();   // id -> { lastTxId, pending: Map }
+    const uid = () => 'uid-' + Math.random().toString(36).slice(2);
+    const nowIso = () => new Date().toISOString();
+    const ocppSend = (id, action, payload) => {
+      const ws = cpSockets.get(id);
+      if (!ws || ws.readyState !== WebSocket.OPEN) throw new Error('CP not connected');
+      const mid = uid();
+      const msg = [2, mid, action, payload || {}];
+      ws.send(JSON.stringify(msg));
+      const st = cpState.get(id) || { lastTxId: null, pending: new Map() };
+      st.pending.set(mid, { action });
+      cpState.set(id, st);
+      return mid;
+    };
+    async function cpConnect(id, btnEl){
+      if (cpSockets.has(id)){
+        cpSockets.get(id).close();
+        cpSockets.delete(id);
+        btnEl.textContent = 'CP Connect';
+        toast(`CP ${id} disconnected`, 'info');
+        return;
+      }
+      // Get vendor/model from row if present
+      const row = btnEl.closest('tr');
+      const vendor = (row?.querySelector('.col-vendor')?.textContent || '').trim().replace(/^-$|^$/,'DemoVendor');
+      const model = (row?.querySelector('.col-model')?.textContent || '').trim().replace(/^-$|^$/,'DemoModel');
+      const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+      const url = `${scheme}://${location.host}/ocpp/${id}`;
+      const ws = new WebSocket(url, 'ocpp1.6');
+      ws.onopen = () => {
+        toast(`CP ${id} connected`, 'success');
+        ocppSend(id, 'BootNotification', { chargePointModel: model, chargePointVendor: vendor });
+        btnEl.textContent = 'CP Disconnect';
+        // Optional: auto-heartbeat every 30s
+        ws._hb = setInterval(()=>{ try{ ocppSend(id, 'Heartbeat', {});}catch{} }, 30000);
+      };
+      ws.onclose = () => {
+        clearInterval(ws._hb);
+        cpSockets.delete(id);
+        btnEl.textContent = 'CP Connect';
+      };
+      ws.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (!Array.isArray(data) || typeof data[0] !== 'number') return;
+          const [msgType, mid, actionOrPayload] = data;
+          // CallResult
+          if (msgType === 3) {
+            const st = cpState.get(id);
+            const rec = st?.pending?.get(mid);
+            if (rec) st.pending.delete(mid);
+            const payload = actionOrPayload; // for type 3, index 2 is payload
+            if (rec?.action === 'StartTransaction') {
+              const txId = payload?.transactionId ?? payload?.transaction_id;
+              if (txId != null) {
+                st.lastTxId = txId;
+                cpState.set(id, st);
+                toast(`Tx started: ${txId}`, 'success');
+              }
+            }
+            return;
+          }
+          // Call (from CSMS to CP)
+          if (msgType === 2) {
+            const action = actionOrPayload;
+            const payload = data[3] || {};
+            if (action === 'RemoteStartTransaction') {
+              // Accept and then send StartTransaction
+              ws.send(JSON.stringify([3, mid, { status: 'Accepted' }]));
+              const idTag = payload?.idTag || 'DEMO123';
+              ocppSend(id, 'StartTransaction', {
+                connectorId: 1,
+                idTag,
+                meterStart: Math.floor(Math.random()*1000),
+                timestamp: nowIso(),
+              });
+              return;
+            }
+            if (action === 'RemoteStopTransaction') {
+              // Accept and then send StopTransaction (if we have one)
+              ws.send(JSON.stringify([3, mid, { status: 'Accepted' }]));
+              const st = cpState.get(id) || { lastTxId: null, pending: new Map() };
+              if (st.lastTxId != null) {
+                ocppSend(id, 'StopTransaction', {
+                  transactionId: st.lastTxId,
+                  meterStop: (Math.floor(Math.random()*1000) + 1000),
+                  timestamp: nowIso(),
+                });
+              }
+              return;
+            }
+            if (action === 'TriggerMessage') {
+              // Accept and then send requested message if Heartbeat
+              ws.send(JSON.stringify([3, mid, { status: 'Accepted' }]));
+              if ((payload?.requestedMessage || payload?.requested_message) === 'Heartbeat') {
+                ocppSend(id, 'Heartbeat', {});
+              }
+              return;
+            }
+          }
+        } catch {}
+      };
+      ws.onerror = () => { toast(`CP ${id} error`, 'error'); };
+      cpSockets.set(id, ws);
+    }
+    async function cpSendHeartbeat(id){
+      const ws = cpSockets.get(id);
+      if (!ws || ws.readyState !== WebSocket.OPEN){ throw new Error('CP not connected'); }
+      ocppSend(id, 'Heartbeat', {});
+      toast('Heartbeat sent', 'success');
+    }
+
+    // (Demo transaction endpoints remain available via API only)
+    </script>
 </body>
 </html>

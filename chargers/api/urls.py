@@ -14,4 +14,34 @@ urlpatterns = [
     # Remote OCPP commands
     path("chargers/<str:charger_id>/start/", views.remote_start, name="remote_start"),  # Send RemoteStartTransaction to a charger
     path("chargers/<str:charger_id>/stop/", views.remote_stop, name="remote_stop"),  # Send RemoteStopTransaction to a charger
+    path("chargers/<str:charger_id>/trigger/heartbeat/", views.trigger_heartbeat, name="trigger_heartbeat"),  # Trigger Heartbeat via OCPP
+
+    # Proxy routes to OCPP HTTP API
+    path(
+        "ocpp-control/<str:charger_id>/start/",
+        views.OcppProxyStartView.as_view(),
+        name="ocpp_proxy_start",
+    ),
+    path(
+        "ocpp-control/<str:charger_id>/stop/",
+        views.OcppProxyStopView.as_view(),
+        name="ocpp_proxy_stop",
+    ),
+    path(
+        "ocpp-control/<str:charger_id>/trigger/heartbeat/",
+        views.OcppProxyTriggerHBView.as_view(),
+        name="ocpp_proxy_trigger_hb",
+    ),
+
+    # Demo transaction helpers (no OCPP call)
+    path(
+        "chargers/<str:charger_id>/demo/start/",
+        views.demo_start_transaction,
+        name="demo_start_transaction",
+    ),
+    path(
+        "chargers/<str:charger_id>/demo/stop/",
+        views.demo_stop_transaction,
+        name="demo_stop_transaction",
+    ),
 ]

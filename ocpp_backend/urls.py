@@ -7,6 +7,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from chargers.api import views as charger_views
+from chargers import views as ui_views
 from chargers.api.urls import urlpatterns as charger_urls
 
 
@@ -27,8 +28,9 @@ urlpatterns = [
     path("api/", include("chargers.api.urls")),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("metrics/", include("django_prometheus.urls")),  # <-- monitoring
-    path("dashboard/", charger_views.dashboard, name="dashboard"),
+    path("metrics/", include("django_prometheus.urls")),  # monitoring
+    path("", charger_views.dashboard, name="dashboard"),
+    path("logout/", ui_views.logout_view, name="logout"),
     path(
         "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),

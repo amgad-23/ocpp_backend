@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from django.contrib.auth import logout
+from django.shortcuts import render, redirect
+from django.views.decorators.http import require_POST
 
-# Create your views here.
+@require_POST
+def logout_view(request):
+    logout(request)
+    return redirect("/")

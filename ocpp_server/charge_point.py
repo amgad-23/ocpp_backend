@@ -4,7 +4,7 @@ from ocpp.routing import on
 from ocpp.v16 import ChargePoint as BaseChargePoint
 from ocpp.v16 import call, call_result
 from ocpp.v16.datatypes import IdTagInfo
-from ocpp.v16.enums import RegistrationStatus, AuthorizationStatus
+from ocpp.v16.enums import RegistrationStatus, AuthorizationStatus, MessageTrigger
 
 from chargers.services import ChargerService, TransactionService
 
@@ -80,6 +80,11 @@ class CentralSystemCP(BaseChargePoint):
     async def remote_stop(self, transaction_id: int):
         """Send RemoteStopTransaction to the CP and return its response."""
         req = call.RemoteStopTransaction(transaction_id=transaction_id)
+        return await self.call(req)
+
+    async def trigger_heartbeat(self):
+        """Request the charger to send a Heartbeat using TriggerMessage."""
+        req = call.TriggerMessage(requested_message=MessageTrigger.Heartbeat)
         return await self.call(req)
 
     @on("StatusNotification")
