@@ -289,7 +289,7 @@
       const vendor = (row?.querySelector('.col-vendor')?.textContent || '').trim().replace(/^-$|^$/,'DemoVendor');
       const model = (row?.querySelector('.col-model')?.textContent || '').trim().replace(/^-$|^$/,'DemoModel');
       const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-      const url = `${scheme}://${location.host}/ocpp/${id}`;
+      const url = `${scheme}://${location.hostname}:9000/${id}`;
       const ws = new WebSocket(url, 'ocpp1.6');
       ws.onopen = () => {
         toast(`CP ${id} connected`, 'success');

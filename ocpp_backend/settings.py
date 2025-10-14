@@ -81,12 +81,8 @@ ASGI_APPLICATION = "ocpp_backend.asgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "ocpp"),
-        "USER": os.getenv("DB_USER", "ocpp"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "ocpp"),
-        "HOST": os.getenv("DB_HOST", "db"),
-        "PORT": int(os.getenv("DB_PORT", 5432)),
+        "ENGINE": "django.db.backends.sqlite3",  # <-- Change the engine
+        "NAME": BASE_DIR / "db.sqlite3",         # <-- Specify the database file path
     }
 }
 
@@ -125,7 +121,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+# Always include leading slash for STATIC_URL
+STATIC_URL = "/static/"
+
+# Where collectstatic will put compiled assets (shared with nginx)
+STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

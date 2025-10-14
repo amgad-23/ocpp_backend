@@ -24,7 +24,7 @@ services:
 
   ocpp:
     build: .
-    command: bash -c "python ocpp_server/server.py"
+    command: bash -c "python -m ocpp_server.server"
     env_file: .env
     depends_on:
       - db
